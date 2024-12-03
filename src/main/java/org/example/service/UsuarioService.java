@@ -2,7 +2,10 @@ package org.example.service;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Root;
+import org.example.Entity.JuegosMesas;
+import org.example.Entity.Mesas;
 import org.example.Entity.Usuarios;
 import org.example.dao.JuegosDao;
 import org.example.dao.UsuarioDao;
@@ -20,6 +23,15 @@ public class UsuarioService implements UsuarioDao {
     @Override
     public void tiempoJuegoUsuarios(long idMesa) {
         try (Session session = HibernateUtil.getSession().openSession()){
+            CriteriaBuilder builder = session.getCriteriaBuilder();
+            CriteriaQuery<Usuarios> usuariosCriteriaQuery = builder.createQuery(Usuarios.class);
+            Root<Usuarios> usuariosRoot = usuariosCriteriaQuery.from(Usuarios.class);
+            Join<Usuarios, Mesas> usuariosMesasJoin = usuariosRoot.join("mesasID");
+            Join<Mesas, JuegosMesas> juegosMesasJoin = usuariosMesasJoin.join("mesasID");
+            usuariosCriteriaQuery.multiselect(usuariosRoot.get("nombre"), juegosMesasJoin.get("tiempoJugado"))
+                    .groupBy(usuariosRoot.get("mesasID"))
+                    .having(builder.equal(usuariosRoot.get("mesas_id"),idMesa));
+            System.out.println(session.createQuery(usuariosCriteriaQuery).getResultList());
         }
     }
 
